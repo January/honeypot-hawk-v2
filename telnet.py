@@ -6,20 +6,23 @@ import psutil
 import requests
 import socket
 import telnetlib3
+import yaml
 
-# Port the fake server will be listening on. Use 23 for maximum effect.
-# Do note that you may need to be root to use port 23, though!
-listen_port = 6023
+# Load yaml config
+config = yaml.safe_load(open("config.yml"))
 
-# Machine's hostname, useful when impersonating a real login prompt
+# Load port from config file
+listen_port = config['telnet_port']
+
+# Machine's hostname, useful when impersonating a real Unix login prompt
 hostname = socket.gethostname()
 
-# Example message to print when the trap has been sprung
-message = "\r\nWhy are you trying to bruteforce telnet servers? That isn't very nice!\r\n"
+# Will be printed when trap is sprung
+message = config['telnet_message']
 
 async def honeypot(reader, writer):
     username = ""
-    writer.write(f'Ubuntu 22.04.3 LTS\r\n{hostname} login: ')
+    writer.write(f"{config['telnet_login_prompt']}{hostname} login: ")
     while True:
         # Act like we're reading a username
         outp = await reader.read(1)

@@ -1,0 +1,10 @@
+# Port the fake telnet server will listen on.
+# Beware, the standard port (23) may require root access!
+telnet_port: 6023
+
+# Prompt shown before the hostname and login request.
+# Impersonates an Ubuntu 22.04.3 LTS telnetd server by default.
+telnet_login_prompt: "Ubuntu 22.04.3 LTS\r\n"
+
+# Message sent to the attacker after they fail to log in.
+telnet_message: "\r\nWhy are you trying to bruteforce telnet servers? That isn't very nice!\r\n"
