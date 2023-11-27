@@ -54,30 +54,35 @@ async def honeypot(reader, writer):
                     ip_region = resp['regionName']
                     ip_city = resp['city']
                     ip_isp = resp['isp']
-            # Log the attempt in a CSV file
-            with open("attempts.csv", 'a', newline='') as attempt:
-                outfile = csv.writer(attempt, quoting=csv.QUOTE_MINIMAL)
-                outfile.writerow([current_time, username, client_ip, ip_country, ip_region, ip_city, ip_isp])
+            # Log the attempt in console if enabled
+            if config['console_logging']:
+                print(f"[{current_time}] {client_ip} ({ip_city}, {ip_region}, {ip_country}) tried logging in as {username}")
+            # Log the attempt in a CSV file if enabled
+            if config['csv_logging']:
+                with open("attempts.csv", 'a', newline='') as attempt:
+                    outfile = csv.writer(attempt, quoting=csv.QUOTE_MINIMAL)
+                    outfile.writerow([current_time, username, client_ip, ip_country, ip_region, ip_city, ip_isp])
             # Report attempt to AbuseIPDB if enabled
-            if(config['abuseipdb_enable']):
+            if config['abuseipdb_enable']:
                 report_data = {"ip": client_ip, "categories": "18", "comment": f"Attempted telnet login on port {listen_port} with username {username}", "key": config['abuseipdb_key']}
                 requests.post(abipdb_endpoint, json=report_data)
 
-            writer.write(message) # Inform user that they've been caught
+            writer.write(message) # Send user a message after failing the login
             break
         else:
             username += outp
             writer.write(outp)
     writer.close()
 
-# Create a new CSV log file if it doesn't exist already
-if not path.exists("attempts.csv"):
+# Create a new CSV log file if it's enabled and doesn't exist already
+if config['csv_logging'] and not path.exists("attempts.csv"):
     with open("attempts.csv", 'w', newline='') as atts:
         initial = csv.writer(atts, quoting=csv.QUOTE_MINIMAL)
         initial.writerow(["Time", "Username", "IP", "Country", "Region", "City", "ISP"])
 
 loop = asyncio.get_event_loop()
 coro = telnetlib3.create_server(port=listen_port, shell=honeypot, timeout=20)
-print("Simple Telnet Honeypot running!")
+start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+print(f"[{start_time}] Simple Telnet Honeypot running!")
 telnet_server = loop.run_until_complete(coro)
 loop.run_until_complete(telnet_server.wait_closed())
