@@ -1,3 +1,11 @@
-Simple Telnet & SSH Honeypots
+Simple Honeypots
 ==============================
-This is a small Python project that aims to produce simple, easy to understand and use honeypots that impersonate Telnet and SSH servers, and log details about users who attempted to log in. Next up is a version that also requests a password before ejecting the user. SSH is currently not finished, but that too is coming soon.
+Simple, easy to configure and use decoy network services written in Python.
+
+Features
+-----------------
+- Detects and reports brute-force attacks on common services such as Telnet and (soon) SSH
+- (soon) Detects and reports port scanners
+- Easy to deploy
+- Highly customizable
+- Can be hooked into AbuseIPDB, a database dedicated to reporting such malicious activities
