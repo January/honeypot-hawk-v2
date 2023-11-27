@@ -6,5 +6,11 @@ telnet_port: 6023
 # Impersonates an Ubuntu 22.04.3 LTS telnetd server by default.
 telnet_login_prompt: "Ubuntu 22.04.3 LTS\r\n"
 
-# Message sent to the attacker after they fail to log in.
+# Message sent to the attacker after they fail to log in on telnet.
 telnet_message: "\r\nWhy are you trying to bruteforce telnet servers? That isn't very nice!\r\n"
+
+# Enable AbuseIPDB reporting.
+abuseipdb_enable: false
+
+# AbuseIPDB key for reporting.
+abuseipdb_key: "AbuseIPDB API key goes here"

@@ -20,6 +20,9 @@ hostname = socket.gethostname()
 # Will be printed when trap is sprung
 message = config['telnet_message']
 
+# AbuseIPDB endpoint
+abipdb_endpoint = "https://api.abuseipdb.com/api/v2/report"
+
 async def honeypot(reader, writer):
     username = ""
     writer.write(f"{config['telnet_login_prompt']}{hostname} login: ")
@@ -30,7 +33,6 @@ async def honeypot(reader, writer):
             break
         elif '\r' in outp:
             # Horribly inefficient due to lack of an inbuilt function to get client IP
-            # Not to mention possibly inaccurate for multiple connections... someone help me out here
             client_ip = "Unknown"
             current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             p = psutil.Process()
@@ -52,11 +54,14 @@ async def honeypot(reader, writer):
                     ip_region = resp['regionName']
                     ip_city = resp['city']
                     ip_isp = resp['isp']
-
-            # Log the attempt in a CSV file because I love spreadsheets
+            # Log the attempt in a CSV file
             with open("attempts.csv", 'a', newline='') as attempt:
                 outfile = csv.writer(attempt, quoting=csv.QUOTE_MINIMAL)
                 outfile.writerow([current_time, username, client_ip, ip_country, ip_region, ip_city, ip_isp])
+            # Report attempt to AbuseIPDB if enabled
+            if(config['abuseipdb_enable']):
+                report_data = {"ip": client_ip, "categories": "18", "comment": f"Attempted telnet login on port {listen_port} with username {username}", "key": config['abuseipdb_key']}
+                requests.post(abipdb_endpoint, json=report_data)
 
             writer.write(message) # Inform user that they've been caught
             break
