@@ -46,7 +46,7 @@ async def honeypot(reader, writer):
                 resp = requests.get(url=url).json()
                 if(resp['status'] == 'success'):
                     ip_country = resp['country']
-                    ip_region = resp['region']
+                    ip_region = resp['regionName']
                     ip_city = resp['city']
                     ip_isp = resp['isp']
 
