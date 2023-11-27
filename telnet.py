@@ -70,6 +70,6 @@ if not path.exists("attempts.csv"):
 
 loop = asyncio.get_event_loop()
 coro = telnetlib3.create_server(port=listen_port, shell=honeypot, timeout=20)
+print("Simple Telnet Honeypot running!")
 telnet_server = loop.run_until_complete(coro)
 loop.run_until_complete(telnet_server.wait_closed())
-print("Simple Telnet Honeypot running!")
