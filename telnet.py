@@ -24,6 +24,10 @@ message = config['telnet_message']
 # AbuseIPDB endpoint
 abipdb_endpoint = "https://api.abuseipdb.com/api/v2/report"
 
+# List of recently caught IPs, meant to avoid duplicate reports on AbuseIPDB
+# as to not exhaust the daily report allowance early because of duplicates
+ip_list = []
+
 async def honeypot(reader, writer):
     username = ""
     writer.write(f"{config['telnet_login_prompt']}{hostname} login: ")
@@ -65,8 +69,12 @@ async def honeypot(reader, writer):
                     outfile.writerow([current_time, username, client_ip, ip_country, ip_region, ip_city, ip_isp])
             # Report attempt to AbuseIPDB if enabled
             if config['abuseipdb_enable']:
-                report_data = {"ip": client_ip, "categories": "18", "comment": f"Attempted telnet login on port {listen_port} with username {username}", "key": config['abuseipdb_key']}
-                requests.post(abipdb_endpoint, json=report_data)
+                if client_ip not in ip_list:
+                    if len(ip_list) == config['ip_log']:
+                        ip_list.pop(0)
+                    ip_list.append(client_ip)
+                    report_data = {"ip": client_ip, "categories": "18", "comment": f"Attempted telnet login on port {listen_port} with username {username}", "key": config['abuseipdb_key']}
+                    requests.post(abipdb_endpoint, json=report_data)
 
             writer.write(message) # Send user a message after failing the login
             break

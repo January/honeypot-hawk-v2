@@ -16,7 +16,10 @@ console_logging: true
 csv_logging: true
 
 # Enable AbuseIPDB reporting.
-abuseipdb_enable: false
+abuseipdb_enable: true
 
 # AbuseIPDB key for reporting.
 abuseipdb_key: "AbuseIPDB API key goes here"
+
+# Number of previous IPs to keep track of to avoid duplicate reports
+ip_log: 4
