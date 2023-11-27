@@ -8,6 +8,7 @@ import socket
 import telnetlib3
 
 # Port the fake server will be listening on. Use 23 for maximum effect.
+# Do note that you may need to be root to use port 23, though!
 listen_port = 6023
 
 # Machine's hostname, useful when impersonating a real login prompt
@@ -71,3 +72,4 @@ loop = asyncio.get_event_loop()
 coro = telnetlib3.create_server(port=listen_port, shell=honeypot, timeout=20)
 telnet_server = loop.run_until_complete(coro)
 loop.run_until_complete(telnet_server.wait_closed())
+print("Simple Telnet Honeypot running!")
