@@ -1,14 +1,3 @@
-# Port the fake telnet server will listen on.
-# Beware, the standard port (23) may require root access!
-telnet_port: 6023
-
-# Prompt shown before the hostname and login request.
-# Impersonates an Ubuntu 22.04.3 LTS telnetd server by default.
-telnet_login_prompt: "Ubuntu 22.04.3 LTS\r\n"
-
-# Message sent to the attacker after they fail to log in on telnet.
-telnet_message: "\r\nWhy are you trying to bruteforce telnet servers? That isn't very nice!\r\n"
-
 # Enable console logging.
 console_logging: true
 
@@ -21,5 +10,25 @@ abuseipdb_enable: false
 # AbuseIPDB key for reporting.
 abuseipdb_key: "AbuseIPDB API key goes here"
 
+# Port the fake telnet server will listen on.
+# Beware, the standard port (23) may require root access!
+telnet_port: 6023
+
+# Where to log telnet attempts if CSV logging is enabled
+telnet_csv_name: "telnet_attempts.csv"
+
+# Prompt shown before the hostname and login request.
+# Impersonates an Ubuntu 22.04.3 LTS telnetd server by default.
+telnet_login_prompt: "Ubuntu 22.04.3 LTS\r\n"
+
+# Message sent to the attacker after they fail to log in on telnet.
+telnet_message: "\r\nWhy are you trying to bruteforce telnet servers? That isn't very nice!\r\n"
+
 # Number of previous IPs to keep track of to avoid duplicate reports
 ip_log: 30
+
+# List of ports the port scan honeypot will listen on
+portscan_ports: [6062, 6063, 6064]
+
+# How many of the above ports must receive connections from the same IP before the honeypot reports it as a scanner
+portscan_strikes: 3

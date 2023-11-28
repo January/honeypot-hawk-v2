@@ -11,6 +11,9 @@ import yaml
 # Load yaml config
 config = yaml.safe_load(open("config.yml"))
 
+# CSV log name
+csv_outfile = config['telnet_csv_name']
+
 # Load port from config file
 listen_port = config['telnet_port']
 
@@ -57,7 +60,7 @@ async def honeypot(reader, writer):
                 print(f"[{current_time}] {client_ip} ({ip_city}, {ip_region}, {ip_country}) tried logging in as {username}")
             # Log the attempt in a CSV file if enabled
             if config['csv_logging']:
-                with open("attempts.csv", 'a', newline='') as attempt:
+                with open(csv_outfile, 'a', newline='') as attempt:
                     outfile = csv.writer(attempt, quoting=csv.QUOTE_MINIMAL)
                     outfile.writerow([current_time, username, client_ip, ip_country, ip_region, ip_city, ip_isp])
             # Report attempt to AbuseIPDB if enabled
@@ -77,8 +80,8 @@ async def honeypot(reader, writer):
     writer.close()
 
 # Create a new CSV log file if it's enabled and doesn't exist already
-if config['csv_logging'] and not os.path.exists("attempts.csv"):
-    with open("attempts.csv", 'w', newline='') as atts:
+if config['csv_logging'] and not os.path.exists(csv_outfile):
+    with open(csv_outfile, 'w', newline='') as atts:
         initial = csv.writer(atts, quoting=csv.QUOTE_MINIMAL)
         initial.writerow(["Time", "Username", "IP", "Country", "Region", "City", "ISP"])
 
