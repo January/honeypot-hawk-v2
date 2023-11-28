@@ -1,5 +1,4 @@
 datetime
-psutil
 requests
 telnetlib3
 pyyaml

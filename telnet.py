@@ -2,7 +2,6 @@ import asyncio
 import csv
 import datetime
 import os
-import psutil
 import requests
 import socket
 import sys
@@ -37,28 +36,22 @@ async def honeypot(reader, writer):
         if not outp:
             break
         elif '\r' in outp:
-            # Horribly inefficient due to lack of an inbuilt function to get client IP
-            client_ip = "Unknown"
+            # The attacker has pressed enter, so log and report the attempt
+            client_ip = writer.get_extra_info('peername')[0]
             current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            p = psutil.Process()
-            for c in p.connections(kind='inet'):
-                if c.status == "ESTABLISHED" and c.laddr.port == listen_port:
-                    client_ip = c.raddr.ip
-
             ip_country = "Unknown"
             ip_region = "Unknown"
             ip_city = "Unknown"
             ip_isp = "Unknown"
 
-            # Only do this if we actually know the IP, otherwise leave everything unknown
-            if client_ip != "Unknown":
-                url = f"http://ip-api.com/json/{client_ip}"
-                resp = requests.get(url=url).json()
-                if(resp['status'] == 'success'):
-                    ip_country = resp['country']
-                    ip_region = resp['regionName']
-                    ip_city = resp['city']
-                    ip_isp = resp['isp']
+            # Gather location data using IP-API
+            url = f"http://ip-api.com/json/{client_ip}"
+            resp = requests.get(url=url).json()
+            if(resp['status'] == 'success'):
+                ip_country = resp['country']
+                ip_region = resp['regionName']
+                ip_city = resp['city']
+                ip_isp = resp['isp']
             # Log the attempt in console if enabled
             if config['console_logging']:
                 print(f"[{current_time}] {client_ip} ({ip_city}, {ip_region}, {ip_country}) tried logging in as {username}")
