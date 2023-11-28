@@ -30,5 +30,8 @@ ip_log: 30
 # List of ports the port scan honeypot will listen on
 portscan_ports: [6062, 6063, 6064]
 
+# Where to log port scan attempts if CSV logging is enabled
+portscan_csv_name: "portscan_attempts.csv"
+
 # How many of the above ports must receive connections from the same IP before the honeypot reports it as a scanner
 portscan_strikes: 3
