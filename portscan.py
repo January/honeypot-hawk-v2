@@ -50,10 +50,10 @@ def log_report(info):
         ip_isp = resp['isp']
 
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    ports = ", ".join(str(p) for p in info['ports'])
+    ports = ", ".join(str(p) for p in list(set(info['ports'])))
 
     if config['console_logging']:
-        print(f"[{current_time}] {ip} ({ip_city}, {ip_region}, {ip_country}) tried scanning ports {ports}")
+        print(f"[{current_time}] {ip} ({ip_city}, {ip_region}, {ip_country}) tried scanning port(s) {ports}")
     if config['csv_logging']:
         with open(csv_outfile, 'a', newline='') as attempt:
             outfile = csv.writer(attempt, quoting=csv.QUOTE_MINIMAL)
@@ -64,7 +64,7 @@ def log_report(info):
             if len(ip_list) == config['ip_log']:
                 ip_list.pop(0)
             ip_list.append(ip)
-            report_data = {"ip": ip, "categories": "14", "comment": f"Attempted port scan. Scanned ports {ports}", "key": config['abuseipdb_key']}
+            report_data = {"ip": ip, "categories": "14", "comment": f"Attempted port scan. Scanned port(s): {ports}", "key": config['abuseipdb_key']}
             requests.post(abipdb_endpoint, json=report_data)
 
 # Clean out our tracking array for attempts that might not be scanners every 15 minutes
@@ -92,7 +92,6 @@ async def honeypot(reader, writer):
         # If not, make a new entry
         suspect_ips.append({"ip": client_ip, "attempts": 1, "ports": [port], "timestamp": time.time()})
     writer.close()
-    await writer.wait_closed()
 
 # Create a new CSV log file if it's enabled and doesn't exist already
 if config['csv_logging'] and not os.path.exists(csv_outfile):
