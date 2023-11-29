@@ -24,10 +24,18 @@ if not os.path.exists("server.pub"):
         content_file.write(pubkey.exportKey('OpenSSH'))
 server_key = paramiko.RSAKey(filename='server.key')
 
-port = 6222
+# Port the SSH server will listen on.
+port = config['ssh_port']
 
 # CSV log name
-csv_outfile = "ssh_attempts.csv"
+csv_outfile = config['ssh_csv_name']
+
+# AbuseIPDB endpoint
+abipdb_endpoint = "https://api.abuseipdb.com/api/v2/report"
+
+# List of recently caught IPs, meant to avoid duplicate reports on AbuseIPDB
+# as to not exhaust the daily report allowance early because of duplicates
+ip_list = []
 
 class Honeypot(paramiko.ServerInterface):
     def __init__(self, connection):
@@ -52,11 +60,20 @@ class Honeypot(paramiko.ServerInterface):
         # Log the attempt in console if enabled
         if config['console_logging']:
             print(f"[{current_time}] {self.connection} ({self.ip_city}, {self.ip_region}, {self.ip_country}) tried logging in with {username}:{password}")
+        # Log attempt in CSV if enabled
         if config['csv_logging']:
             with open(csv_outfile, 'a', newline='') as attempt:
                 outfile = csv.writer(attempt, quoting=csv.QUOTE_MINIMAL)
                 outfile.writerow([current_time, username, password, self.connection,
                                   self.ip_country, self.ip_region, self.ip_city, self.ip_isp])
+        # Report attempt to AbuseIPDB if enabled
+        if config['abuseipdb_enable']:
+            if self.connection not in ip_list: # Check if this IP is in the last n that were reported
+                if len(ip_list) == config['ip_log']:
+                    ip_list.pop(0)
+                ip_list.append(self.connection)
+                report_data = {"ip": self.connection, "categories": "18,22", "comment": f"Attempted SSH login on port {port} with {username}:{password}", "key": config['abuseipdb_key']}
+                requests.post(abipdb_endpoint, json=report_data)
         return paramiko.AUTH_FAILED
 
     def get_allowed_auths(self, username):

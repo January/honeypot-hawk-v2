@@ -36,3 +36,11 @@ portscan_csv_name: "portscan_attempts.csv"
 
 # How many of the above ports must receive connections from the same IP before the honeypot reports it as a scanner
 portscan_strikes: 3
+
+# Port the fake SSH server will listen on.
+# Beware, the standard port (22) may require root access!
+# Alternatively, you could use iptables to redirect 22 to the port here.
+ssh_port: 6222
+
+# Where to log SSH attempts if CSV logging is enabled
+ssh_csv_name: "telnet_attempts.csv"
