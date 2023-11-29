@@ -49,6 +49,9 @@ class Honeypot(paramiko.ServerInterface):
 
     def check_auth_password(self, username, password):
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # Log the attempt in console if enabled
+        if config['console_logging']:
+            print(f"[{current_time}] {self.connection} ({self.ip_city}, {self.ip_region}, {self.ip_country}) tried logging in with {username}:{password}")
         if config['csv_logging']:
             with open(csv_outfile, 'a', newline='') as attempt:
                 outfile = csv.writer(attempt, quoting=csv.QUOTE_MINIMAL)
@@ -77,12 +80,16 @@ if __name__ == '__main__':
         with open(csv_outfile, 'w', newline='') as atts:
             initial = csv.writer(atts, quoting=csv.QUOTE_MINIMAL)
             initial.writerow(["Time", "Username", "Password", "IP", "Country", "Region", "City", "ISP"])
+
+    start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print(f"[{start_time}] Simple SSH Honeypot running! Press Ctrl+C to quit.")
+
     try:
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.bind(('', port))
         server_socket.listen(100)
-        while(True):
+        while True:
             try:
                 client_socket, client_addr = server_socket.accept()
                 _thread.start_new_thread(handleConnection,(client_socket,))
