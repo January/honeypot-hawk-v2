@@ -12,6 +12,7 @@ abuseipdb_key: "AbuseIPDB API key goes here"
 
 # Port the fake telnet server will listen on.
 # Beware, the standard port (23) may require root access!
+# Alternatively, you could use iptables to redirect 23 to the port here.
 telnet_port: 6023
 
 # Where to log telnet attempts if CSV logging is enabled

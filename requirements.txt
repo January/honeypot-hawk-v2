@@ -1,4 +1,6 @@
 datetime
+paramiko
+pycryptodome
 requests
 telnetlib3
 pyyaml
