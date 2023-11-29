@@ -43,4 +43,4 @@ portscan_strikes: 3
 ssh_port: 6222
 
 # Where to log SSH attempts if CSV logging is enabled
-ssh_csv_name: "telnet_attempts.csv"
+ssh_csv_name: "ssh_attempts.csv"
