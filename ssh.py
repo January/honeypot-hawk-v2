@@ -59,7 +59,7 @@ class Honeypot(paramiko.ServerInterface):
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         # Log the attempt in console if enabled
         if config['console_logging']:
-            print(f"[{current_time}] {self.connection} ({self.ip_city}, {self.ip_region}, {self.ip_country}) tried logging in with {username}:{password}")
+            print(f"[SSH @ {current_time}] {self.connection} ({self.ip_city}, {self.ip_region}, {self.ip_country}) tried logging in with {username}:{password}")
         # Log attempt in CSV if enabled
         if config['csv_logging']:
             with open(csv_outfile, 'a', newline='') as attempt:
@@ -91,7 +91,7 @@ def handleConnection(client):
     if not channel is None:
         channel.close()
 
-if __name__ == '__main__':
+def run_ssh():
     # Create a new CSV log file if it's enabled and doesn't exist already
     if config['csv_logging'] and not os.path.exists(csv_outfile):
         with open(csv_outfile, 'w', newline='') as atts:

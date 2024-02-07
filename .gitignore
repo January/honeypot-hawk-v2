@@ -1,0 +1,6 @@
+/__pycache__/
+portscan_attempts.csv
+server.key
+server.pub
+ssh_attempts.csv
+telnet_attempts.csv

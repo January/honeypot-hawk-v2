@@ -53,7 +53,7 @@ def log_report(info):
     ports = ", ".join(str(p) for p in list(set(info['ports'])))
 
     if config['console_logging']:
-        print(f"[{current_time}] {ip} ({ip_city}, {ip_region}, {ip_country}) tried scanning port(s) {ports}")
+        print(f"[Port-scan @ {current_time}] {ip} ({ip_city}, {ip_region}, {ip_country}) tried scanning port(s) {ports}")
     if config['csv_logging']:
         with open(csv_outfile, 'a', newline='') as attempt:
             outfile = csv.writer(attempt, quoting=csv.QUOTE_MINIMAL)
@@ -99,18 +99,20 @@ if config['csv_logging'] and not os.path.exists(csv_outfile):
         initial = csv.writer(atts, quoting=csv.QUOTE_MINIMAL)
         initial.writerow(["Time", "IP", "Country", "Region", "City", "ISP", "Ports"])
 
-try:
-    loop = asyncio.get_event_loop()
-    for port in ports:
-        loop.run_until_complete(asyncio.start_server(honeypot, '', port))
-    loop.create_task(clean_suspects())
-    start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[{start_time}] Simple Port-Scan Honeypot running! Press Ctrl+C to quit.")
-    loop.run_forever()
-except KeyboardInterrupt:
-    end_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[{end_time}] Quitting.")
+def run_port_scan():
     try:
-        sys.exit(130)
-    except SystemExit:
-        os._exit(130)
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        for port in ports:
+            loop.run_until_complete(asyncio.start_server(honeypot, '', port))
+        loop.create_task(clean_suspects())
+        start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[{start_time}] Simple Port-Scan Honeypot running! Press Ctrl+C to quit.")
+        loop.run_forever()
+    except KeyboardInterrupt:
+        end_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[{end_time}] Quitting.")
+        try:
+            sys.exit(130)
+        except SystemExit:
+            os._exit(130)

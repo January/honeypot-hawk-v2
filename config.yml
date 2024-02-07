@@ -13,7 +13,7 @@ abuseipdb_key: "AbuseIPDB API key goes here"
 # Port the fake telnet server will listen on.
 # Beware, the standard port (23) may require root access!
 # Alternatively, you could use iptables to redirect 23 to the port here.
-telnet_port: 6023
+telnet_port: 6028
 
 # Where to log telnet attempts if CSV logging is enabled
 telnet_csv_name: "telnet_attempts.csv"
@@ -23,7 +23,7 @@ telnet_csv_name: "telnet_attempts.csv"
 telnet_login_prompt: "Ubuntu 22.04.3 LTS\r\n"
 
 # Message sent to the attacker after they fail to log in on telnet.
-telnet_message: "\r\nWhy are you trying to bruteforce telnet servers? That isn't very nice!\r\n"
+telnet_message: "\r\nAccess denied.\r\n"
 
 # Number of previous IPs to keep track of to avoid duplicate reports
 ip_log: 30

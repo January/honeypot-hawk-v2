@@ -57,7 +57,7 @@ async def honeypot(reader, writer):
                 ip_isp = resp['isp']
             # Log the attempt in console if enabled
             if config['console_logging']:
-                print(f"[{current_time}] {client_ip} ({ip_city}, {ip_region}, {ip_country}) tried logging in as {username}")
+                print(f"[Telnet @ {current_time}] {client_ip} ({ip_city}, {ip_region}, {ip_country}) tried logging in as {username}")
             # Log the attempt in a CSV file if enabled
             if config['csv_logging']:
                 with open(csv_outfile, 'a', newline='') as attempt:
@@ -85,17 +85,19 @@ if config['csv_logging'] and not os.path.exists(csv_outfile):
         initial = csv.writer(atts, quoting=csv.QUOTE_MINIMAL)
         initial.writerow(["Time", "Username", "IP", "Country", "Region", "City", "ISP"])
 
-try:
-    loop = asyncio.get_event_loop()
-    coro = telnetlib3.create_server(port=listen_port, shell=honeypot, timeout=20)
-    start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[{start_time}] Simple Telnet Honeypot running! Press Ctrl+C to quit.")
-    telnet_server = loop.run_until_complete(coro)
-    loop.run_until_complete(telnet_server.wait_closed())
-except KeyboardInterrupt:
-    end_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[{end_time}] Quitting.")
+def run_telnet():
     try:
-        sys.exit(130)
-    except SystemExit:
-        os._exit(130)
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        coro = telnetlib3.create_server(port=listen_port, shell=honeypot, timeout=20)
+        start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[{start_time}] Simple Telnet Honeypot running! Press Ctrl+C to quit.")
+        telnet_server = loop.run_until_complete(coro)
+        loop.run_until_complete(telnet_server.wait_closed())
+    except KeyboardInterrupt:
+        end_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[{end_time}] Quitting.")
+        try:
+            sys.exit(130)
+        except SystemExit:
+            os._exit(130)
