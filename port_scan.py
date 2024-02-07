@@ -93,26 +93,26 @@ async def honeypot(reader, writer):
         suspect_ips.append({"ip": client_ip, "attempts": 1, "ports": [port], "timestamp": time.time()})
     writer.close()
 
-# Create a new CSV log file if it's enabled and doesn't exist already
-if config['csv_logging'] and not os.path.exists(csv_outfile):
-    with open(csv_outfile, 'w', newline='') as atts:
-        initial = csv.writer(atts, quoting=csv.QUOTE_MINIMAL)
-        initial.writerow(["Time", "IP", "Country", "Region", "City", "ISP", "Ports"])
-
-def run_port_scan():
+def run_honeypot():
     try:
+        # Create a new CSV log file if it's enabled and doesn't exist already
+        if config['csv_logging'] and not os.path.exists(csv_outfile):
+            with open(csv_outfile, 'w', newline='') as atts:
+                initial = csv.writer(atts, quoting=csv.QUOTE_MINIMAL)
+                initial.writerow(["Time", "IP", "Country", "Region", "City", "ISP", "Ports"])
+
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         for port in ports:
             loop.run_until_complete(asyncio.start_server(honeypot, '', port))
         loop.create_task(clean_suspects())
         start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[{start_time}] Simple Port-Scan Honeypot running! Press Ctrl+C to quit.")
+        print(f"[Port-scan @ {start_time}] Port scan honeypot running!")
         loop.run_forever()
     except KeyboardInterrupt:
         end_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[{end_time}] Quitting.")
+        print(f"[Port-scan @ {end_time}] Stopping port scan honeypot.")
         try:
-            sys.exit(130)
+            sys.exit(129)
         except SystemExit:
-            os._exit(130)
+            os._exit(129)

@@ -79,25 +79,24 @@ async def honeypot(reader, writer):
             writer.write(outp)
     writer.close()
 
-# Create a new CSV log file if it's enabled and doesn't exist already
-if config['csv_logging'] and not os.path.exists(csv_outfile):
-    with open(csv_outfile, 'w', newline='') as atts:
-        initial = csv.writer(atts, quoting=csv.QUOTE_MINIMAL)
-        initial.writerow(["Time", "Username", "IP", "Country", "Region", "City", "ISP"])
-
-def run_telnet():
+def run_honeypot():
     try:
+        # Create a new CSV log file if it's enabled and doesn't exist already
+        if config['csv_logging'] and not os.path.exists(csv_outfile):
+            with open(csv_outfile, 'w', newline='') as atts:
+                initial = csv.writer(atts, quoting=csv.QUOTE_MINIMAL)
+                initial.writerow(["Time", "Username", "IP", "Country", "Region", "City", "ISP"])
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         coro = telnetlib3.create_server(port=listen_port, shell=honeypot, timeout=20)
         start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[{start_time}] Simple Telnet Honeypot running! Press Ctrl+C to quit.")
+        print(f"[Telnet @ {start_time}] Telnet honeypot running!")
         telnet_server = loop.run_until_complete(coro)
         loop.run_until_complete(telnet_server.wait_closed())
     except KeyboardInterrupt:
         end_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[{end_time}] Quitting.")
+        print(f"[Telnet @ {end_time}] Stopping telnet honeypot.")
         try:
-            sys.exit(130)
+            sys.exit(129)
         except SystemExit:
-            os._exit(130)
+            os._exit(129)

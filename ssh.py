@@ -91,7 +91,7 @@ def handleConnection(client):
     if not channel is None:
         channel.close()
 
-def run_ssh():
+def run_honeypot():
     # Create a new CSV log file if it's enabled and doesn't exist already
     if config['csv_logging'] and not os.path.exists(csv_outfile):
         with open(csv_outfile, 'w', newline='') as atts:
@@ -99,7 +99,7 @@ def run_ssh():
             initial.writerow(["Time", "Username", "Password", "IP", "Country", "Region", "City", "ISP"])
 
     start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    print(f"[{start_time}] Simple SSH Honeypot running! Press Ctrl+C to quit.")
+    print(f"[SSH @ {start_time}] SSH honeypot running!")
 
     try:
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -112,11 +112,11 @@ def run_ssh():
                 _thread.start_new_thread(handleConnection,(client_socket,))
             except KeyboardInterrupt:
                 end_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                print(f"[{end_time}] Quitting.")
+                print(f"[SSH @ {end_time}] Stopping SSH honeypot.")
                 try:
-                    sys.exit(130)
+                    sys.exit(129)
                 except SystemExit:
-                    os._exit(130)
+                    os._exit(129)
     except Exception as e:
         print("Error: Couldn't create socket.")
         print(e)
