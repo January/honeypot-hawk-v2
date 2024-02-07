@@ -67,22 +67,21 @@ class HoneypotHawk:
         self.stop_ssh()
         self.stop_port_scan()
 
-    def manage_all(self):
-        pass
-
     def start(self):
         ip_api = requests.get(f"http://ip-api.com/json/").json()
         ip = ip_api['query']
         region_name = ip_api['regionName']
         country_name = ip_api['country']
         start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[{start_time}] Starting Honeypot Hawk on {ip} ({region_name}, {country_name})...")
-        print("To start a honeypot, enter its number. To stop it, just enter its number again. Options:")
+        print(f"[{start_time}] Starting Honeypot Hawk on {ip} ({region_name}, {country_name})")
+        print("To start a certain honeypot, enter its number. To stop it, just enter its number again. Options:")
         print("[1] Telnet honeypot")
         print("[2] SSH honeypot")
         print("[3] Port scan honeypot")
-        print("[4] All of the above")
-        print("[5] Exit program (kills all honeypots)")
+        print("-------------------------")
+        print("[4] Start all honeypots")
+        print("[5] Stop all honeypots")
+        print("[6] Quit Honeypot Hawk (kills all honeypots)")
         print("Please make your choice now: ", end="")
         while True:
             try:
@@ -103,8 +102,10 @@ class HoneypotHawk:
                     else:
                         self.stop_port_scan()
                 elif selection == 4:
-                    self.manage_all()
+                    self.start_all()
                 elif selection == 5:
+                    self.stop_all()
+                elif selection == 6:
                     self.stop_all()
                     end_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                     print(f"[{end_time}] Exiting Honeypot Hawk, see you next time.")
