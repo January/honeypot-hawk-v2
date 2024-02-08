@@ -74,22 +74,31 @@ class Honeypot(paramiko.ServerInterface):
                 ip_list.append(self.connection)
                 report_data = {"ip": self.connection, "categories": "18,22", "comment": f"Attempted SSH login on port {port} with credentials {username}:{password}", "key": config['abuseipdb_key']}
                 requests.post(abipdb_endpoint, json=report_data)
+        # Always fail.
         return paramiko.AUTH_FAILED
 
     def get_allowed_auths(self, username):
         return 'password'
 
 def handleConnection(client):
-    transport = paramiko.Transport(client)
-    transport.add_server_key(server_key)
+    try:
+        transport = paramiko.Transport(client)
+        transport.add_server_key(server_key)
 
-    ip = transport.getpeername()[0]
+        ip = transport.getpeername()[0]
 
-    transport.start_server(server=Honeypot(ip))
+        transport.start_server(server=Honeypot(ip))
 
-    channel = transport.accept(1)
-    if not channel is None:
-        channel.close()
+        channel = transport.accept(1)
+        if not channel is None:
+            channel.close()
+    # These errors aren't super important but spam the logs if not handled
+    except ConnectionResetError:
+        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[SSH @ {current_time}] Got a connection reset error off of {ip}. Ignoring.")
+    except EOFError:
+        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[SSH @ {current_time}] Got an EOF error off of {ip}. Ignoring.")
 
 def run_honeypot():
     # Create a new CSV log file if it's enabled and doesn't exist already
