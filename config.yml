@@ -38,8 +38,8 @@ portscan_csv_name: "portscan_attempts.csv"
 portscan_strikes: 3
 
 # Port the fake SSH server will listen on.
-# Beware, the standard port (22) may require root access!
-# Alternatively, you could use iptables to redirect 22 to the port here.
+# Running it on port 22 would require root access typically and I strongly recommend against it.
+# You should use iptables to point port 22 at this port instead, if that's your thing.
 ssh_port: 6222
 
 # Where to log SSH attempts if CSV logging is enabled

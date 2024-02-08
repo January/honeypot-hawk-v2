@@ -34,20 +34,12 @@ def ip_exists(key):
             return False
 
 def log_report(info):
+    print(f"Received {info}")
     ip = info['ip']
-    ip_country = "Unknown"
-    ip_region = "Unknown"
-    ip_city = "Unknown"
-    ip_isp = "Unknown"
-
-    # Gather location data using IP-API
-    url = f"http://ip-api.com/json/{ip}"
-    resp = requests.get(url=url).json()
-    if(resp['status'] == 'success'):
-        ip_country = resp['country']
-        ip_region = resp['regionName']
-        ip_city = resp['city']
-        ip_isp = resp['isp']
+    ip_country = info['country']
+    ip_region = info['region']
+    ip_city = info['city']
+    ip_isp = info['isp']
 
     current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     ports = ", ".join(str(p) for p in list(set(info['ports'])))
@@ -67,31 +59,44 @@ def log_report(info):
             report_data = {"ip": ip, "categories": "14", "comment": f"Attempted port scan. Scanned port(s): {ports}", "key": config['abuseipdb_key']}
             requests.post(abipdb_endpoint, json=report_data)
 
-# Clean out our tracking array for attempts that might not be scanners every 15 minutes
+# Check every 5 minutes for reportable IPs, remove inactive ones.
 async def clean_suspects():
      while True:
         for i in suspect_ips:
-            if i['attempts'] < config['portscan_strikes'] and i['timestamp'] + 1800 < time.time():
+            if len(i['ports']) < config['portscan_strikes'] and i['timestamp'] + 1800 < time.time():
                 suspect_ips.remove(i)
-        await asyncio.sleep(900)
+            elif len(i['ports']) >= config['portscan_strikes']:
+                log_report(i)
+                suspect_ips.remove(i)
+        await asyncio.sleep(300)
 
 async def honeypot(reader, writer):
     client_ip = writer.get_extra_info('peername')[0]
     port = writer.get_extra_info('sockname')[1]
 
-    # Check if we've already tracked this IP. If so, increase scan attempts
+    print(f"Handling new connection from {client_ip}:{port}")
+
+    # Check if we've already tracked this IP. If so, add to the ports we've seen it hit.
     offset = ip_exists(client_ip)
     if offset:
-        offset['attempts'] += 1
         offset['ports'].append(port)
-        # If we've reached the 'strikes,' assume it's a scanner and report it
-        if offset['attempts'] >= config['portscan_strikes']:
-            log_report(offset)
-            suspect_ips.remove(offset)
     else:
         # If not, make a new entry
-        suspect_ips.append({"ip": client_ip, "attempts": 1, "ports": [port], "timestamp": time.time()})
+        ip_country = "Unknown"
+        ip_region = "Unknown"
+        ip_city = "Unknown"
+        ip_isp = "Unknown"
+        url = f"http://ip-api.com/json/{client_ip}"
+        resp = requests.get(url=url).json()
+        if(resp['status'] == 'success'):
+            ip_country = resp['country']
+            ip_region = resp['regionName']
+            ip_city = resp['city']
+            ip_isp = resp['isp']
+        suspect_ips.append({"ip": client_ip, "ports": [port], "timestamp": time.time(), "country": ip_country,
+                            "region": ip_region, "city": ip_city, "isp": ip_isp})
     writer.close()
+    await writer.wait_closed()
 
 def run_honeypot():
     try:
