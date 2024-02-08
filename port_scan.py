@@ -34,7 +34,6 @@ def ip_exists(key):
             return False
 
 def log_report(info):
-    print(f"Received {info}")
     ip = info['ip']
     ip_country = info['country']
     ip_region = info['region']
@@ -73,8 +72,6 @@ async def clean_suspects():
 async def honeypot(reader, writer):
     client_ip = writer.get_extra_info('peername')[0]
     port = writer.get_extra_info('sockname')[1]
-
-    print(f"Handling new connection from {client_ip}:{port}")
 
     # Check if we've already tracked this IP. If so, add to the ports we've seen it hit.
     offset = ip_exists(client_ip)
