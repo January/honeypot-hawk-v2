@@ -93,12 +93,9 @@ def handleConnection(client):
         if not channel is None:
             channel.close()
     # These errors aren't super important but spam the logs if not handled
-    except ConnectionResetError:
+    except paramiko.SSHException:
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[SSH @ {current_time}] Got a connection reset error off of {ip}. Ignoring.")
-    except EOFError:
-        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[SSH @ {current_time}] Got an EOF error off of {ip}. Ignoring.")
+        print(f"[SSH @ {current_time}] Connection error from {ip}. Ignoring.")
 
 def run_honeypot():
     # Create a new CSV log file if it's enabled and doesn't exist already
