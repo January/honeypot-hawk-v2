@@ -71,7 +71,6 @@ async def honeypot(reader, writer):
                             ip_list.pop(0)
                         ip_list.append(client_ip)
                         report_data = {"ip": client_ip, "categories": "18", "comment": f"Attempted telnet login on port {listen_port} with username {username}", "key": config['abuseipdb_key']}
-                        response = requests.post(abipdb_endpoint, json=report_data)
 
                 writer.write(message) # Send user a message after failing the login
                 break

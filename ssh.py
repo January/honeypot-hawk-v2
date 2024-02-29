@@ -73,7 +73,6 @@ class Honeypot(paramiko.ServerInterface):
                     ip_list.pop(0)
                 ip_list.append(self.connection)
                 report_data = {"ip": self.connection, "categories": "18,22", "comment": f"Attempted SSH login on port {port} with credentials {username}:{password}", "key": config['abuseipdb_key']}
-                response = requests.post(abipdb_endpoint, json=report_data)
         # Always fail.
         return paramiko.AUTH_FAILED
 
