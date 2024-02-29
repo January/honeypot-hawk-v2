@@ -56,6 +56,7 @@ def log_report(info):
                 ip_list.pop(0)
             ip_list.append(ip)
             report_data = {"ip": ip, "categories": "14", "comment": f"Attempted port scan. Scanned port(s): {ports}", "key": config['abuseipdb_key']}
+            requests.post(abipdb_endpoint, json=report_data)
 
 # Check every 5 minutes for reportable IPs, remove inactive ones.
 async def clean_suspects():
