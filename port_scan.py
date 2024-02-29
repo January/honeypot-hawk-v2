@@ -52,11 +52,11 @@ def log_report(info):
     # Report attempt to AbuseIPDB if enabled
     if config['abuseipdb_enable']:
         if ip not in ip_list: # Check if this IP is in the last n that were reported
-            if len(ip_list) == config['ip_log']:
+            if len(ip_list) >= config['ip_log']:
                 ip_list.pop(0)
             ip_list.append(ip)
             report_data = {"ip": ip, "categories": "14", "comment": f"Attempted port scan. Scanned port(s): {ports}", "key": config['abuseipdb_key']}
-            requests.post(abipdb_endpoint, json=report_data)
+            response = requests.post(abipdb_endpoint, json=report_data)
 
 # Check every 5 minutes for reportable IPs, remove inactive ones.
 async def clean_suspects():

@@ -67,11 +67,11 @@ async def honeypot(reader, writer):
                 # Report attempt to AbuseIPDB if enabled
                 if config['abuseipdb_enable']:
                     if client_ip not in ip_list: # Check if this IP is in the last n that were reported
-                        if len(ip_list) == config['ip_log']:
+                        if len(ip_list) >= config['ip_log']:
                             ip_list.pop(0)
                         ip_list.append(client_ip)
                         report_data = {"ip": client_ip, "categories": "18", "comment": f"Attempted telnet login on port {listen_port} with username {username}", "key": config['abuseipdb_key']}
-                        requests.post(abipdb_endpoint, json=report_data)
+                        response = requests.post(abipdb_endpoint, json=report_data)
 
                 writer.write(message) # Send user a message after failing the login
                 break
