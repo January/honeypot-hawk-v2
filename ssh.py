@@ -69,7 +69,7 @@ class Honeypot(paramiko.ServerInterface):
         # Report attempt to AbuseIPDB if enabled
         if config['abuseipdb_enable']:
             if self.connection not in ip_list: # Check if this IP is in the last n that were reported
-                if len(ip_list) >= config['ip_log']:
+                while len(ip_list) >= config['ip_log']:
                     ip_list.pop(0)
                 ip_list.append(self.connection)
                 report_data = {"ip": self.connection, "categories": "18,22", "comment": f"Attempted SSH login on port {port} with credentials {username}:{password}", "key": config['abuseipdb_key']}
