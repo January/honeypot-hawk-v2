@@ -1,12 +1,16 @@
 import csv
 from Crypto.PublicKey import RSA
 import datetime
+from dateutil.parser import isoparse
+import json
+from multiprocessing import Process
 import os
 import requests
 import socket
 import sys
 import threading
 import _thread
+import time
 import paramiko
 import yaml
 
@@ -33,9 +37,45 @@ csv_outfile = config['ssh_csv_name']
 # AbuseIPDB endpoint
 abipdb_endpoint = "https://api.abuseipdb.com/api/v2/report"
 
+reports_endpoint = "https://api.abuseipdb.com/api/v2/reports"
+
 # List of recently caught IPs, meant to avoid duplicate reports on AbuseIPDB
 # as to not exhaust the daily report allowance early because of duplicates
 ip_list = []
+
+def ip_in_list(key):
+    for i in ip_list:
+        if key in i['ip']:
+            return i
+    return False
+
+def check_reports(ip):
+    resp = requests.get(url=f"{reports_endpoint}?ipAddress={ip}&maxAgeInDays=1&perPage=50&key={config['abuseipdb_key']}").json()
+    if "data" in resp:
+        for result in resp['data']['results']:
+            if result['reporterId'] == 131985:
+                report_timestamp = isoparse(result['reportedAt']).timestamp()
+                if time.time() - report_timestamp > 900:
+                    return False
+                else:
+                    return True
+        return False
+    else:
+        return False
+
+def log_failed_report(report_data):
+    current_time = datetime.datetime.utcnow()
+    current_date = current_time.date()
+    filename = f"failed_reports_{current_date}.csv"
+
+    if not os.path.isfile(filename):
+        with open(filename, 'w', newline='') as reports:
+            initial = csv.writer(reports, quoting=csv.QUOTE_MINIMAL)
+            initial.writerow(["IP", "Categories", "ReportDate", "Comment"])
+
+    with open(filename, 'a', newline='') as reports:
+        report = csv.writer(reports, quoting=csv.QUOTE_MINIMAL)
+        report.writerow([report_data['ip'], report_data['categories'], current_time.isoformat(), report_data['comment']])
 
 class Honeypot(paramiko.ServerInterface):
     def __init__(self, connection):
@@ -68,12 +108,14 @@ class Honeypot(paramiko.ServerInterface):
                                   self.ip_country, self.ip_region, self.ip_city, self.ip_isp])
         # Report attempt to AbuseIPDB if enabled
         if config['abuseipdb_enable']:
-            if self.connection not in ip_list: # Check if this IP is in the last n that were reported
-                while len(ip_list) >= config['ip_log']:
-                    ip_list.pop(0)
-                ip_list.append(self.connection)
-                report_data = {"ip": self.connection, "categories": "18,22", "comment": f"Attempted SSH login on port {port} with credentials {username}:{password}", "key": config['abuseipdb_key']}
-                requests.post(abipdb_endpoint, json=report_data)
+            if not ip_in_list(self.connection): # Check if this IP is in the last n that were reported
+                if not check_reports(self.connection):
+                    ip_list.append({"ip": self.connection, "timestamp": time.time()})
+                    utc_time = datetime.datetime.utcnow().strftime("%H:%M")
+                    report_data = {"ip": self.connection, "categories": "18,22", "comment": f"[{utc_time}] Attempted SSH login on port {port} with credentials {username}:{password}", "key": config['abuseipdb_key']}
+                    repost = requests.post(abipdb_endpoint, json=report_data)
+                    if "errors" in json.loads(repost.text):
+                        log_failed_report(report_data)
         # Always fail.
         return paramiko.AUTH_FAILED
 
@@ -92,10 +134,24 @@ def handleConnection(client):
         channel = transport.accept(1)
         if not channel is None:
             channel.close()
+        for i in ip_list:
+            if i['timestamp'] + 900 < time.time():
+                ip_list.remove(i)
     # These errors aren't super important but spam the logs if not handled
     except paramiko.SSHException:
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print(f"[SSH @ {current_time}] Connection error from {ip}. Ignoring.")
+        if config['console_logging']:
+            print(f"[SSH @ {current_time}] {ip} tried to send an invalid header.")
+        # Report attempt to AbuseIPDB if enabled
+        if config['abuseipdb_enable']:
+            if not ip_in_list(ip): # Check if this IP is in the last n that were reported
+                if not check_reports(ip):
+                    ip_list.append({"ip": ip, "timestamp": time.time()})
+                    utc_time = datetime.datetime.utcnow().strftime("%H:%M")
+                    report_data = {"ip": ip, "categories": "18,22", "comment": f"[{utc_time}] Tried to connect to SSH on port {port} but didn't have a valid header (port scanner?)", "key": config['abuseipdb_key']}
+                    repost = requests.post(abipdb_endpoint, json=report_data)
+                    if "errors" in json.loads(repost.text):
+                        log_failed_report(report_data)
 
 def run_honeypot():
     # Create a new CSV log file if it's enabled and doesn't exist already

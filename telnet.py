@@ -1,11 +1,14 @@
 import asyncio
 import csv
 import datetime
+from dateutil.parser import isoparse
+import json
 import os
 import requests
 import socket
 import sys
 import telnetlib3
+import time
 import yaml
 
 # Load yaml config
@@ -26,9 +29,45 @@ message = config['telnet_message']
 # AbuseIPDB endpoint
 abipdb_endpoint = "https://api.abuseipdb.com/api/v2/report"
 
+reports_endpoint = "https://api.abuseipdb.com/api/v2/reports"
+
 # List of recently caught IPs, meant to avoid duplicate reports on AbuseIPDB
 # as to not exhaust the daily report allowance early because of duplicates
 ip_list = []
+
+def ip_in_list(key):
+    for i in ip_list:
+        if key in i['ip']:
+            return i
+    return False
+
+def check_reports(ip):
+    resp = requests.get(url=f"{reports_endpoint}?ipAddress={ip}&maxAgeInDays=1&perPage=50&key={config['abuseipdb_key']}").json()
+    if "data" in resp:
+        for result in resp['data']['results']:
+            if result['reporterId'] == 131985:
+                report_timestamp = isoparse(result['reportedAt']).timestamp()
+                if time.time() - report_timestamp > 900:
+                    return False
+                else:
+                    return True
+        return False
+    else:
+        return False
+
+def log_failed_report(report_data):
+    current_time = datetime.datetime.utcnow()
+    current_date = current_time.date()
+    filename = f"failed_reports_{current_date}.csv"
+
+    if not os.path.isfile(filename):
+        with open(filename, 'w', newline='') as reports:
+            initial = csv.writer(reports, quoting=csv.QUOTE_MINIMAL)
+            initial.writerow(["IP", "Categories", "ReportDate", "Comment"])
+
+    with open(filename, 'a', newline='') as reports:
+        report = csv.writer(reports, quoting=csv.QUOTE_MINIMAL)
+        report.writerow([report_data['ip'], report_data['categories'], current_time.isoformat(), report_data['comment']])
 
 async def honeypot(reader, writer):
     username = ""
@@ -66,13 +105,14 @@ async def honeypot(reader, writer):
                         outfile.writerow([current_time, username, client_ip, ip_country, ip_region, ip_city, ip_isp])
                 # Report attempt to AbuseIPDB if enabled
                 if config['abuseipdb_enable']:
-                    if client_ip not in ip_list: # Check if this IP is in the last n that were reported
-                        while len(ip_list) >= config['ip_log']:
-                            ip_list.pop(0)
-                        ip_list.append(client_ip)
-                        report_data = {"ip": client_ip, "categories": "18", "comment": f"Attempted telnet login on port {listen_port} with username {username}", "key": config['abuseipdb_key']}
-                        requests.post(abipdb_endpoint, json=report_data)
-
+                    if not ip_in_list(client_ip): # Check if this IP was reported in the last 15 minutes
+                        if not check_reports(client_ip):
+                            ip_list.append({"ip": client_ip, "timestamp": time.time()})
+                            utc_time = datetime.datetime.utcnow().strftime("%H:%M")
+                            report_data = {"ip": client_ip, "categories": "18", "comment": f"[{utc_time}] Attempted telnet login on port {listen_port} with username {username}", "key": config['abuseipdb_key']}
+                            repost = requests.post(abipdb_endpoint, json=report_data)
+                            if "errors" in json.loads(repost.text):
+                                log_failed_report(report_data)
                 writer.write(message) # Send user a message after failing the login
                 break
             else:
@@ -84,6 +124,14 @@ async def honeypot(reader, writer):
             print(f"[Telnet @ {current_time}] Connection error from {client_ip}. Ignoring.")
     writer.close()
 
+# Remove IPs that haven't been reported in fifteen minutes.
+async def clean_ip_list():
+     while True:
+        for i in ip_list:
+            if i['timestamp'] + 900 < time.time():
+                ip_list.remove(i)
+        await asyncio.sleep(60)
+
 def run_honeypot():
     try:
         # Create a new CSV log file if it's enabled and doesn't exist already
@@ -93,6 +141,7 @@ def run_honeypot():
                 initial.writerow(["Time", "Username", "IP", "Country", "Region", "City", "ISP"])
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
+        loop.create_task(clean_ip_list())
         coro = telnetlib3.create_server(port=listen_port, shell=honeypot, timeout=20)
         start_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         print(f"[Telnet @ {start_time}] Telnet honeypot running!")
