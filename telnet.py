@@ -112,7 +112,7 @@ async def honeypot(reader, writer):
                         if not check_reports(client_ip):
                             ip_list.append({"ip": client_ip, "timestamp": time.time()})
                             utc_time = datetime.datetime.utcnow().strftime("%H:%M")
-                            report_data = {"ip": client_ip, "categories": "18", "comment": f"[{utc_time}] Attempted telnet login on port {listen_port} with username {username}", "key": config['abuseipdb_key']}
+                            report_data = {"ip": client_ip, "categories": "18,20", "comment": f"[{utc_time}] Attempted telnet login on port {listen_port} with username {username}", "key": config['abuseipdb_key']}
                             repost = requests.post(abipdb_endpoint, json=report_data)
                             if "errors" in json.loads(repost.text):
                                 log_failed_report(report_data)
