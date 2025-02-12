@@ -10,6 +10,9 @@ abuseipdb_enable: false
 # AbuseIPDB key for reporting.
 abuseipdb_key: "AbuseIPDB API key goes here"
 
+# AbuseIPDB user ID for checking past reports. Prevents spamminess.
+abuseipdb_uid: 131985
+
 # Port the fake telnet server will listen on.
 # Running it on port 23 would require root access typically and I strongly recommend against it.
 # You should use iptables to point port 23 at this port instead, if that's your thing.
@@ -29,7 +32,7 @@ telnet_message: "\r\nAccess denied.\r\n"
 ip_log: 30
 
 # List of ports the port scan honeypot will listen on
-portscan_ports: [6062, 6063, 6064]
+portscan_ports: [6062, 6063, 6064, 6065, 6066]
 
 # Where to log port scan attempts if CSV logging is enabled
 portscan_csv_name: "portscan_attempts.csv"
@@ -44,3 +47,19 @@ ssh_port: 6222
 
 # Where to log SSH attempts if CSV logging is enabled
 ssh_csv_name: "ssh_attempts.csv"
+
+# Port the fake FTP server will listen on.
+# Running it on port 21 would require root access typically and I strongly recommend against it.
+# You should use iptables to point port 21 at this port instead, if that's your thing.
+ftp_port: 6221
+
+# Where to log FTP attempts if CSV logging is enabled
+ftp_csv_name: "ftp_attempts.csv"
+
+# Port the fake SMB server will listen on.
+# Running it on port 445 would require root access typically and I strongly recommend against it.
+# You should use iptables to point port 445 at this port instead, if that's your thing.
+smb_port: 6445
+
+# Where to log SMB attempts if CSV logging is enabled
+smb_csv_name: "smb_attempts.csv"

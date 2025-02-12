@@ -39,6 +39,9 @@ abipdb_endpoint = "https://api.abuseipdb.com/api/v2/report"
 
 reports_endpoint = "https://api.abuseipdb.com/api/v2/reports"
 
+# Load AbuseIPDB UID
+abipdb_uid = config['abuseipdb_uid']
+
 # List of recently caught IPs, meant to avoid duplicate reports on AbuseIPDB
 # as to not exhaust the daily report allowance early because of duplicates
 ip_list = []
@@ -53,7 +56,7 @@ def check_reports(ip):
     resp = requests.get(url=f"{reports_endpoint}?ipAddress={ip}&maxAgeInDays=1&perPage=50&key={config['abuseipdb_key']}").json()
     if "data" in resp:
         for result in resp['data']['results']:
-            if result['reporterId'] == 131985:
+            if result['reporterId'] == abipdb_uid:
                 report_timestamp = isoparse(result['reportedAt']).timestamp()
                 if time.time() - report_timestamp > 900:
                     return False
@@ -141,17 +144,7 @@ def handleConnection(client):
     except paramiko.SSHException:
         current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         if config['console_logging']:
-            print(f"[SSH @ {current_time}] {ip} tried to send an invalid header.")
-        # Report attempt to AbuseIPDB if enabled
-        if config['abuseipdb_enable']:
-            if not ip_in_list(ip): # Check if this IP is in the last n that were reported
-                if not check_reports(ip):
-                    ip_list.append({"ip": ip, "timestamp": time.time()})
-                    utc_time = datetime.datetime.utcnow().strftime("%H:%M")
-                    report_data = {"ip": ip, "categories": "18,22", "comment": f"[{utc_time}] Tried to connect to SSH on port {port} but didn't have a valid header (port scanner?)", "key": config['abuseipdb_key']}
-                    repost = requests.post(abipdb_endpoint, json=report_data)
-                    if "errors" in json.loads(repost.text):
-                        log_failed_report(report_data)
+            print(f"[SSH @ {current_time}] {ip} didn't complete the connection. Ignoring it...")
 
 def run_honeypot():
     # Create a new CSV log file if it's enabled and doesn't exist already

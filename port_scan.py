@@ -30,6 +30,9 @@ abipdb_endpoint = "https://api.abuseipdb.com/api/v2/report"
 
 reports_endpoint = "https://api.abuseipdb.com/api/v2/reports"
 
+# Load AbuseIPDB UID
+abipdb_uid = config['abuseipdb_uid']
+
 def ip_suspect(key):
     for i in suspect_ips:
         if key in i['ip']:
@@ -46,7 +49,7 @@ def check_reports(ip):
     resp = requests.get(url=f"{reports_endpoint}?ipAddress={ip}&maxAgeInDays=1&perPage=50&key={config['abuseipdb_key']}").json()
     if "data" in resp:
         for result in resp['data']['results']:
-            if result['reporterId'] == 131985:
+            if result['reporterId'] == abipdb_uid:
                 report_timestamp = isoparse(result['reportedAt']).timestamp()
                 if time.time() - report_timestamp > 900:
                     return False
